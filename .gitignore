@@ -1,0 +1,107 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Environments
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.venv/
+venv/
+env/
+ENV/
+backend/venv/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+
+# Expo / React Native
+.expo/
+dist/
+build/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Next.js / React (Admin)
+.next/
+out/
+build/
+dist/
+
+# Python / FastAPI
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Pytest / Coverage
+.coverage
+.tox/
+.nox/
+.pytest_cache/
+htmlcov/
+
+# Editor directories and files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Laravel Framework & Storage
+laravel/storage/framework/sessions/*
+laravel/storage/framework/views/*
+laravel/storage/framework/cache/*
+laravel/storage/framework/testing/*
+laravel/storage/logs/*
+laravel/vendor/
+!laravel/storage/framework/sessions/.gitignore
+!laravel/storage/framework/views/.gitignore
+!laravel/storage/framework/cache/.gitignore
+!laravel/storage/logs/.gitignore
+scratch/
+laravel/scratch/
+
+# Build Binaries & APKs
+*.apk
+*.aab
+*.ipa
+
+# Cloud & Firebase Admin Secrets
+*firebase*.json
+*-adminsdk-*.json
+service-account*.json

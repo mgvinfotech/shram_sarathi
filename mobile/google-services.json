@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "739278893371",
+    "project_id": "shramsarathi-1fb8e",
+    "storage_bucket": "shramsarathi-1fb8e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:739278893371:android:d21e1798fa16cd00c3871e",
+        "android_client_info": {
+          "package_name": "com.shramsarathi.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBr-pYPoJBkOTuRHPd9b1t6Nk_DfzKQbak"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
