@@ -330,10 +330,15 @@ class WalletController extends Controller
     {
         $user = $request->user();
         $otpService = app(OtpService::class);
-        $otp = $otpService->isDevMode() ? '123456' : $otpService->generate();
+        $shouldSendSms = $otpService->isSmsEnabled() || !$otpService->isDevMode();
+        $otp = $shouldSendSms ? $otpService->generate() : '123456';
 
         Cache::put("payout_otp:{$user->phone}", $otp, 300); // 5 minutes TTL
         Log::info("[Payout OTP] Generated for user #{$user->id} ({$user->phone}): {$otp}");
+
+        if ($shouldSendSms) {
+            app(\App\Services\SmsService::class)->sendOtp($user->phone, $otp, 5);
+        }
 
         $maskedPhone = substr($user->phone, 0, 2) . '******' . substr($user->phone, -2);
 

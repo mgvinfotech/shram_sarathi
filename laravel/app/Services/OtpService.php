@@ -10,15 +10,22 @@ class OtpService
     private const DEV_OTP = '123456';
     private const OTP_PREFIX = 'otp:';
     private int $ttlSeconds;
+    private SmsService $smsService;
 
-    public function __construct()
+    public function __construct(?SmsService $smsService = null)
     {
         $this->ttlSeconds = (int) env('OTP_EXPIRE_MINUTES', 5) * 60;
+        $this->smsService = $smsService ?? app(SmsService::class);
     }
 
     public function isDevMode(): bool
     {
         return in_array(env('ENVIRONMENT', 'development'), ['development', 'dev', 'local']);
+    }
+
+    public function isSmsEnabled(): bool
+    {
+        return $this->smsService->isEnabled();
     }
 
     public function generate(): string
@@ -42,20 +49,33 @@ class OtpService
     }
 
     /**
-     * Generate OTP, store in Redis, and log it (dev mode only).
+     * Generate OTP, store in Cache, and send via Msg24 SMS Gateway.
      * Returns the OTP only for internal use — never expose to API caller.
      */
     public function sendOtp(string $phone): string
     {
-        $otp = $this->isDevMode() ? self::DEV_OTP : $this->generate();
+        $shouldSendSms = $this->isSmsEnabled() || !$this->isDevMode();
+
+        // If SMS sending is enabled or in production, generate real random OTP
+        $otp = $shouldSendSms ? $this->generate() : self::DEV_OTP;
         $this->store($phone, $otp);
 
         $maskedPhone = substr($phone, 0, 2) . '******' . substr($phone, -2);
-        if ($this->isDevMode()) {
-            Log::info("[DEV] OTP stored for phone: {$maskedPhone}");
+        $expireMinutes = (int) env('OTP_EXPIRE_MINUTES', 5);
+
+        if ($shouldSendSms) {
+            $sent = $this->smsService->sendOtp($phone, $otp, $expireMinutes);
+            if ($sent) {
+                Log::info("OTP sent via Msg24 SMS gateway to {$maskedPhone}");
+            } else {
+                Log::warning("Failed to send OTP via SMS gateway to {$maskedPhone}");
+            }
+
+            if ($this->isDevMode()) {
+                Log::info("[DEV OTP] Generated: {$otp} for phone: {$maskedPhone}");
+            }
         } else {
-            // TODO: integrate SMS gateway (MSG91 / Twilio) here
-            Log::info("OTP sent via SMS to {$maskedPhone}");
+            Log::info("[DEV] Mock OTP stored for phone: {$maskedPhone} -> {$otp}");
         }
 
         return $otp;
@@ -70,3 +90,4 @@ class OtpService
         return $stored !== null && $stored === $otp;
     }
 }
+
