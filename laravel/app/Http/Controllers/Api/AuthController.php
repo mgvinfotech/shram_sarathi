@@ -612,4 +612,58 @@ class AuthController extends Controller
             'name'    => $user->name,
         ]);
     }
+
+    // ─── DELETE /api/auth/delete-account ──────────────────────────────────
+
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['detail' => 'Unauthenticated.'], 401);
+        }
+
+        // Check if user has active bookings
+        $hasActiveBookings = \App\Models\Booking::where(function ($q) use ($user) {
+            $q->where('customer_id', $user->id)
+              ->orWhere('provider_id', $user->id);
+        })->whereIn('status', ['requested', 'accepted', 'in_progress'])->exists();
+
+        if ($hasActiveBookings) {
+            return response()->json([
+                'detail' => 'आपकी सक्रिय बुकिंग चल रही है। कृपया पहले अपनी बुकिंग पूरी या रद्द करें।'
+            ], 400);
+        }
+
+        $userId = $user->id;
+        $originalPhone = $user->phone;
+
+        // If provider profile exists, deactivate it
+        if ($user->providerProfile) {
+            $user->providerProfile->is_online = false;
+            $user->providerProfile->is_available = false;
+            $user->providerProfile->save();
+        }
+
+        // Anonymize and delete user data to comply with Google Play & privacy standards
+        $user->phone = 'del_' . $userId . '_' . time();
+        $user->name = 'Deleted User';
+        $user->gender = null;
+        $user->email = null;
+        $user->aadhaar_url = null;
+        $user->eshram_url = null;
+        $user->fcm_token = null;
+        $user->upi_id = null;
+        $user->bank_details = null;
+        $user->is_active = false;
+        $user->is_blacklisted = true;
+        $user->blacklist_reason = 'Account deleted upon user request';
+        $user->setPassword(bin2hex(random_bytes(16)));
+        $user->save();
+
+        Log::info("ACCOUNT DELETED | user_id={$userId} original_phone={$originalPhone}");
+
+        return response()->json([
+            'message' => 'Account and personal data have been deleted successfully.',
+        ]);
+    }
 }

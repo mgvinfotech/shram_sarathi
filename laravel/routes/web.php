@@ -18,6 +18,8 @@ Route::name('web.')->group(function () {
     Route::get('/careers',       [PageController::class, 'careers'])->name('careers');
     Route::get('/terms',         [PageController::class, 'terms'])->name('terms');
     Route::get('/privacy',       [PageController::class, 'privacy'])->name('privacy');
+    Route::get('/delete-account',[PageController::class, 'deleteAccount'])->name('delete-account');
+    Route::post('/delete-account',[PageController::class, 'submitDeleteAccountRequest'])->name('delete-account.submit');
     Route::get('/refund',        [PageController::class, 'refund'])->name('refund');
     Route::get('/shipping',      [PageController::class, 'shipping'])->name('shipping');
     Route::get('/checkout',      [PageController::class, 'checkout'])->name('checkout');

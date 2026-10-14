@@ -116,6 +116,8 @@ export default function ProfileScreen({ navigation }: Props) {
     }
   };
 
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
   const handleLogout = () => {
     Alert.alert(
       t('logout'),
@@ -134,11 +136,46 @@ export default function ProfileScreen({ navigation }: Props) {
     );
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      lang === 'hi' ? '⚠️ खाता स्थायी रूप से हटाएं' : '⚠️ Delete Account Permanently',
+      lang === 'hi'
+        ? 'क्या आप सचमुच अपना खाता हटाना चाहते हैं? आपका सारा डेटा, प्रोफाइल, केवाईसी और रिकॉर्ड स्थायी रूप से हटा दिए जाएंगे। यह प्रक्रिया वापस नहीं ली जा सकती।'
+        : 'Are you sure you want to permanently delete your account? All your profile data, KYC and records will be deleted. This action cannot be undone.',
+      [
+        { text: lang === 'hi' ? 'नहीं (रद्द करें)' : 'Cancel', style: 'cancel' },
+        {
+          text: lang === 'hi' ? 'हाँ, खाता हटाएं' : 'Delete Account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsDeletingAccount(true);
+              await api.delete('/api/auth/delete-account');
+              await dispatch(logout());
+              Alert.alert(
+                lang === 'hi' ? 'सफल' : 'Success',
+                lang === 'hi'
+                  ? 'आपका खाता सफलतापूर्वक हटा दिया गया है।'
+                  : 'Your account has been deleted successfully.'
+              );
+              navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+            } catch (err: any) {
+              const msg = err.response?.data?.detail || err.response?.data?.message || err.message || 'Error deleting account';
+              Alert.alert(lang === 'hi' ? 'त्रुटि' : 'Error', msg);
+            } finally {
+              setIsDeletingAccount(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const avatarUri = getImageUrl(photoUrl);
 
   const effectiveRole = (
-    providerDetails?.category ||
     (role && role.toLowerCase() !== 'provider' ? role : '') ||
+    providerDetails?.category ||
     providerDetails?.role ||
     role ||
     'labour'
@@ -375,11 +412,23 @@ export default function ProfileScreen({ navigation }: Props) {
                     {/* ── 4. LABOUR / KARIGAR ROLE DETAILS ── */}
                     {!isTransport && !isDriver && !isContractor && !isAgent && (
                       <>
-                        {providerDetails.sub_categories && providerDetails.sub_categories.length > 0 ? (
-                          <Text style={{ fontSize: 13, color: '#333', fontWeight: '600', marginTop: 4 }}>
-                            🛠️ {lang === 'hi' ? 'हुनर / कार्य' : 'Skills'}: {Array.isArray(providerDetails.sub_categories) ? providerDetails.sub_categories.join(', ') : providerDetails.sub_categories}
-                          </Text>
-                        ) : null}
+                        {(() => {
+                          const rawSubs = Array.isArray(providerDetails.sub_categories)
+                            ? providerDetails.sub_categories
+                            : (providerDetails.sub_categories ? [providerDetails.sub_categories] : []);
+                          const vehicleIndicators = ['रिक्शा', 'rickshaw', 'taxi', 'टैक्सी', 'कार', 'car', 'ट्रक', 'truck', 'पिकअप', 'pickup', 'हाथी', 'loader', 'लोडर', 'bike', 'बाइक', 'बस', 'bus', 'suv', 'sedan', 'dzire', 'scorpio', 'bolero', 'jcb', 'ट्रैक्टर', 'tractor', 'wagonr'];
+                          const validSkills = rawSubs.filter((s: string) => {
+                            if (!s) return false;
+                            const lower = String(s).toLowerCase();
+                            return !vehicleIndicators.some(vi => lower.includes(vi));
+                          });
+
+                          return validSkills.length > 0 ? (
+                            <Text style={{ fontSize: 13, color: '#333', fontWeight: '600', marginTop: 4 }}>
+                              🛠️ {lang === 'hi' ? 'हुनर / कार्य' : 'Skills'}: {validSkills.join(', ')}
+                            </Text>
+                          ) : null;
+                        })()}
 
                         {providerDetails.expected_daily_wage ? (
                           <Text style={{ fontSize: 13, color: '#333', fontWeight: '600', marginTop: 4 }}>
@@ -541,6 +590,19 @@ export default function ProfileScreen({ navigation }: Props) {
           🚪 {t('logout')}
         </Button>
 
+        {/* Delete Account (Mandatory Google Play Policy) */}
+        <Button
+          mode="text"
+          style={styles.deleteAccountButton}
+          onPress={handleDeleteAccount}
+          loading={isDeletingAccount}
+          disabled={isDeletingAccount}
+          textColor="#DC2626"
+          labelStyle={styles.deleteAccountText}
+        >
+          🗑️ {lang === 'hi' ? 'खाता हटाएं (Delete Account)' : 'Delete Account'}
+        </Button>
+
         <Text style={styles.version}>Shram Sarathi v1.0.0</Text>
       </ScrollView>
 
@@ -658,6 +720,16 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: '#FED7D7',
   },
   logoutText: { color: '#E53E3E', fontSize: 16, fontWeight: '600' },
+  deleteAccountButton: {
+    marginHorizontal: 16,
+    marginTop: -4,
+    marginBottom: 8,
+  },
+  deleteAccountText: {
+    color: '#DC2626',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   version: { textAlign: 'center', color: '#ccc', fontSize: 12, marginTop: 8 },
 
   // Fullscreen Modal Styles

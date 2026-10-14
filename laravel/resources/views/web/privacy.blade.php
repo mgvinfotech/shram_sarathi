@@ -85,18 +85,37 @@
         </p>
     </div>
 
-    <!-- 7. Grievance Officer & Contact -->
+    <!-- 7. Account & Data Deletion (Google Play Policy Compliance) -->
+    <div class="policy-section">
+        <h2><span class="num-badge">7</span> Account & Data Deletion</h2>
+        <p>
+            In compliance with Google Play Store User Data policies, users can request the permanent deletion of their account and all associated personal data at any time:
+        </p>
+        <ul>
+            <li><strong>In-App Deletion:</strong> Open the Shram Sarathi mobile app, navigate to <strong>Profile → Delete Account (खाता हटाएं)</strong>, and confirm your request.</li>
+            <li><strong>Web Deletion Portal:</strong> You may also request deletion online through our dedicated web portal: 
+                <a href="{{ route('web.delete-account') }}" style="color: var(--orange); font-weight: 700; text-decoration: underline;">
+                    Request Account & Data Deletion Online
+                </a>.
+            </li>
+        </ul>
+        <p>
+            Upon receiving your request, personal identifying data (name, phone, address, KYC documents, vehicle details) will be permanently deleted or anonymized within 48 hours, except where required for statutory accounting and legal compliance.
+        </p>
+    </div>
+
+    <!-- 8. Grievance Officer & Contact -->
     <div class="policy-section" style="background:linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%); color:#fff; text-align:center;">
         <h3 style="font-size:1.25rem; font-weight:900; margin-bottom:10px; color:#fff;">Grievance Redressal & Privacy Inquiries</h3>
         <p style="color:rgba(255,255,255,0.8); max-width:580px; margin:0 auto 20px;">
             For privacy-related questions, data update requests, or grievance redressal, please contact our designated support channel:
         </p>
         <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
-            <a href="mailto:support@shramsarathi.com" style="background:var(--orange); color:#fff; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-envelope"></i> support@shramsarathi.com
+            <a href="mailto:support@shramsarathinetwork.com" style="background:var(--orange); color:#fff; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-envelope"></i> support@shramsarathinetwork.com
             </a>
-            <a href="tel:18001234567" style="background:rgba(255,255,255,0.15); color:#fff; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-phone"></i> IVR: 1800-123-4567
+            <a href="tel:+917084900909" style="background:rgba(255,255,255,0.15); color:#fff; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-phone"></i> Helpline: +91 70849 00909
             </a>
         </div>
         <p style="font-size:0.8rem; color:rgba(255,255,255,0.5); margin-top:16px;">

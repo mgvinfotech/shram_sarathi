@@ -9,12 +9,27 @@ import { getSkillTranslation } from '../../utils/skills';
 
 interface Props {
   navigation: any;
-  route: { params: { provider: any } };
+  route?: { params?: { provider?: any } };
 }
 
 export default function ProviderDetailScreen({ navigation, route }: Props) {
-  const { provider } = route.params;
+  const provider = route?.params?.provider;
   const { t, lang } = useLanguage();
+
+  if (!provider) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 16, color: '#333' }}>
+            {lang === 'hi' ? 'सारथी की जानकारी नहीं मिली' : 'Provider details not found'}
+          </Text>
+          <Button mode="contained" buttonColor="#FF6B00" onPress={() => navigation.goBack()}>
+            {lang === 'hi' ? 'वापस जाएं' : 'Go Back'}
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const isThekedar = provider.category === 'thekedar';
 

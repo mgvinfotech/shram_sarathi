@@ -100,10 +100,24 @@ class PaymentController extends Controller
             'payment_id'  => $payment->id,
         ]);
 
+        $providerUser = \App\Models\User::find($payment->provider_id);
+
         return response()->json([
-            'message'     => 'Payment verified. You can now call the provider.',
-            'booking_id'  => $booking->id,
-            'provider_id' => $payment->provider_id,
+            'message'        => 'Payment verified. You can now call the provider.',
+            'booking_id'     => $booking->id,
+            'provider_id'    => $payment->provider_id,
+            'provider_phone' => $providerUser?->phone,
+        ]);
+    }
+
+    // ─── GET /api/payment/fee ─────────────────────────────────────────────────
+
+    public function getFee(): JsonResponse
+    {
+        $amount = (float) Setting::get('booking_fee', env('BOOKING_FEE', 10));
+        return response()->json([
+            'success' => true,
+            'fee'     => $amount,
         ]);
     }
 

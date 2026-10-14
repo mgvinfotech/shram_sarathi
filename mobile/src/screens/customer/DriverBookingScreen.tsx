@@ -290,7 +290,6 @@ export default function DriverBookingScreen({ route, navigation }: Props) {
         live_chat: liveChatEnabled,
       };
       const res = await api.post('/api/driver/request', payload);
-      console.log('[DriverRequest] Response:', JSON.stringify(res.data));
       rootNavigation.navigate('DriverRequestStatus' as never, { job_id: res.data.job_id } as never);
     } catch (err: any) {
       if (err.response?.data?.job_id) {

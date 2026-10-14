@@ -34,7 +34,7 @@ interface SubCategory {
 }
 
 export default function ProviderListScreen({ navigation, route }: Props) {
-  const { category } = route.params;
+  const category = route?.params?.category || '';
   const dispatch = useDispatch<AppDispatch>();
   const { nearbyProviders, isLoading } = useSelector((s: RootState) => s.provider);
   const { t, lang } = useLanguage();

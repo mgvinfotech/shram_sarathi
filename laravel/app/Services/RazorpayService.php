@@ -88,6 +88,10 @@ class RazorpayService
      */
     public function verifySignature(string $orderId, string $paymentId, string $signature): bool
     {
+        if (empty($this->keySecret) || empty($orderId) || empty($paymentId) || empty($signature)) {
+            return false;
+        }
+
         try {
             $this->api->utility->verifyPaymentSignature([
                 'razorpay_order_id'   => $orderId,

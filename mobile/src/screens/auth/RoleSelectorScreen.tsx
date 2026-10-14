@@ -54,7 +54,7 @@ export default function RoleSelectorScreen({ navigation, route }: Props) {
     { id: 'thekedar',  dbRole: 'contractor',  roles: ['contractor','customer'], category: 'thekedar',  title: lang === 'hi' ? 'ठेकेदार'         : 'Contractor',  emoji: '🏗️', color: '#F0F5FF', border: '#3182CE' },
     { id: 'karigar',   dbRole: 'karigar',     roles: ['karigar',  'customer'], category: 'karigar',   title: lang === 'hi' ? 'कारीगर'          : 'Artisan',     emoji: '🔧', color: '#FFFFF0', border: '#D69E2E' },
     { id: 'driver',    dbRole: 'driver',      roles: ['driver',   'customer'], category: 'driver',    title: lang === 'hi' ? 'स्वतंत्र ड्राइवर': 'Driver',      emoji: '🚕', color: '#FFF5F5', border: '#E53E3E' },
-    { id: 'transport', dbRole: 'driver',      roles: ['driver',   'customer'], category: 'transport',  title: lang === 'hi' ? 'परिवहन सेवा'    : 'Transport',   emoji: '🚛', color: '#F5F0FF', border: '#805AD5' },
+    { id: 'transport', dbRole: 'transport',   roles: ['transport','customer'], category: 'transport', title: lang === 'hi' ? 'परिवहन सेवा'    : 'Transport',   emoji: '🚛', color: '#F5F0FF', border: '#805AD5' },
   ];
 
   return (

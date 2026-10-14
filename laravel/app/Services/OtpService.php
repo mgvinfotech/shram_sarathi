@@ -20,7 +20,11 @@ class OtpService
 
     public function isDevMode(): bool
     {
-        return in_array(env('ENVIRONMENT', 'development'), ['development', 'dev', 'local']);
+        if (app()->isProduction() || config('app.env') === 'production') {
+            return false;
+        }
+        $env = env('ENVIRONMENT', config('app.env', 'development'));
+        return in_array($env, ['development', 'dev', 'local']);
     }
 
     public function isSmsEnabled(): bool

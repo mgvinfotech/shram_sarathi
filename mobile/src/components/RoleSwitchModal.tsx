@@ -404,7 +404,6 @@ export default function RoleSwitchModal({ visible, onClose, navigation }: Props)
         payload.is_passenger_vehicle = setupUsePassenger;
         payload.is_goods_vehicle = setupUseGoods;
         payload.is_delivery_vehicle = setupUseDelivery;
-        payload.sub_categories = [setupVehicleType];
       } else if (roleKey === 'contractor') {
         payload.firm_name = setupFirmName.trim();
         payload.team_size = setupTeamSize.trim() || '5';

@@ -72,7 +72,7 @@ interface Props {
 
 export default function KarigarRequestStatusScreen({ route, navigation }: Props) {
   const { lang } = useLanguage();
-  const { job_id } = route.params;
+  const job_id = route?.params?.job_id;
   const hi = lang === 'hi';
 
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
@@ -81,6 +81,10 @@ export default function KarigarRequestStatusScreen({ route, navigation }: Props)
   const [cancelling, setCancelling] = useState(false);
 
   const fetchStatus = useCallback(async () => {
+    if (!job_id) {
+      setLoading(false);
+      return;
+    }
     try {
       const res = await api.get(`/api/karigar/status/${job_id}`);
       setJobStatus(res.data);
@@ -94,10 +98,11 @@ export default function KarigarRequestStatusScreen({ route, navigation }: Props)
   }, [job_id]);
 
   useEffect(() => {
+    if (!job_id) return;
     fetchStatus();
     const interval = setInterval(fetchStatus, 3000);
     return () => clearInterval(interval);
-  }, [fetchStatus]);
+  }, [fetchStatus, job_id]);
 
   const onRefresh = async () => {
     setRefreshing(true);

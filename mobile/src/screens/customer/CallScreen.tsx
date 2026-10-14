@@ -16,7 +16,7 @@ interface Props {
 type CallState = 'idle' | 'calling' | 'connected' | 'ended' | 'waiting_ivr';
 
 export default function CallScreen({ navigation, route }: Props) {
-  const { bookingId, providerName, providerCategory } = route.params;
+  const { bookingId, providerName, providerCategory } = route?.params || {};
   const [callState, setCallState] = useState<CallState>('idle');
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);

@@ -16,6 +16,7 @@ import {
   registerRazorpayListener,
   handleRazorpayModalSuccess,
   handleRazorpayModalCancel,
+  handleRazorpayModalError,
   RazorpayResult,
 } from '../services/razorpay';
 
@@ -54,14 +55,22 @@ export default function RazorpayInAppModal() {
     const url = request.url;
     if (!url) return true;
 
-    // 1. Intercept payment success redirect
-    if (url.startsWith('shramsarathi://payment-success') || url.includes('payment-success')) {
+    // 1. Intercept payment success redirect strictly
+    if (url.startsWith('shramsarathi://payment-success')) {
       try {
         const cleanUrl = url.replace('shramsarathi://', 'https://shramsarathi.app/');
         const urlObj = new URL(cleanUrl);
-        const paymentId = urlObj.searchParams.get('payment_id') || `pay_${Date.now()}`;
+        const paymentId = urlObj.searchParams.get('payment_id');
         const returnedOrderId = urlObj.searchParams.get('order_id') || orderId;
-        const signature = urlObj.searchParams.get('signature') || '';
+        const signature = urlObj.searchParams.get('signature');
+
+        if (!paymentId || !signature || signature.trim() === '') {
+          setVisible(false);
+          const err = new Error('Payment signature verification failed: missing payment signature');
+          (err as any).code = 'PAYMENT_SIGNATURE_MISSING';
+          handleRazorpayModalError(err);
+          return false;
+        }
 
         const result: RazorpayResult = {
           razorpay_payment_id: paymentId,
@@ -71,19 +80,15 @@ export default function RazorpayInAppModal() {
 
         setVisible(false);
         handleRazorpayModalSuccess(result);
-      } catch {
+      } catch (err: any) {
         setVisible(false);
-        handleRazorpayModalSuccess({
-          razorpay_payment_id: `pay_${Date.now()}`,
-          razorpay_order_id: orderId,
-          razorpay_signature: '',
-        });
+        handleRazorpayModalError(err);
       }
       return false;
     }
 
     // 2. Intercept payment cancel redirect
-    if (url.startsWith('shramsarathi://payment-cancel') || url.includes('payment-cancel')) {
+    if (url.startsWith('shramsarathi://payment-cancel')) {
       handleClose();
       return false;
     }

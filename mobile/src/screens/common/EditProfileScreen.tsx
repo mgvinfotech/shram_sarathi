@@ -184,18 +184,21 @@ export default function EditProfileScreen({ navigation, route }: Props) {
       if (data.photo_url) {
         setPhotoUri(getImageUrl(data.photo_url));
       }
-      if (data.category) {
+
+      // Respect the role passed in route params or active redux role; do not overwrite it with data.category
+      if (routeRole) {
+        setActiveRole(routeRole);
+        setSelectedCategory(resolveCategorySlug(routeRole));
+      } else if (data.category) {
         const cat = data.category.toLowerCase().trim();
         setSelectedCategory(resolveCategorySlug(data.category));
         if (['transport', 'vehicle', 'driver', 'contractor', 'karigar', 'labour'].includes(cat)) {
           setActiveRole(cat);
         }
       }
+
       if (data.vehicle_number) {
         setVehicleNumber(data.vehicle_number);
-        if (activeRole !== 'driver') {
-          setActiveRole('transport');
-        }
       }
       if (data.vehicle_type) {
         setVehicleType(data.vehicle_type);
@@ -216,7 +219,18 @@ export default function EditProfileScreen({ navigation, route }: Props) {
         setOwnerName(data.owner_name);
       }
       if (data.sub_categories) {
-        setSelectedSkills(data.sub_categories);
+        // Filter out vehicle types if this is labour/karigar
+        const currentTargetRole = routeRole || activeRole;
+        if (['labour', 'karigar'].includes(currentTargetRole)) {
+          const vehicleTokens = ['रिक्शा', 'rickshaw', 'taxi', 'टैक्सी', 'कार', 'car', 'ट्रक', 'truck', 'पिकअप', 'pickup', 'loader', 'लोडर', 'bike', 'बाइक', 'बस', 'bus'];
+          const filtered = (Array.isArray(data.sub_categories) ? data.sub_categories : [data.sub_categories]).filter((s: string) => {
+            const low = String(s).toLowerCase();
+            return !vehicleTokens.some(vt => low.includes(vt));
+          });
+          setSelectedSkills(filtered);
+        } else {
+          setSelectedSkills(Array.isArray(data.sub_categories) ? data.sub_categories : [data.sub_categories]);
+        }
       }
       if (data.experience_years) {
         setExperience(String(data.experience_years));
@@ -254,13 +268,9 @@ export default function EditProfileScreen({ navigation, route }: Props) {
         if (data.district) setDistrict(data.district);
       }
 
-      // If user might be transport, also attempt fetching /api/transport/vehicle-profile
-      const checkTrans = ['transport', 'vehicle', 'transporter'].includes((data.category || '').toLowerCase()) ||
-                          ['transport', 'vehicle', 'transporter'].includes(routeRole) ||
-                          ['transport', 'vehicle', 'transporter'].includes(activeRole) ||
-                          !!data.vehicle_number;
-      if (checkTrans) {
-        setActiveRole('transport');
+      // ONLY fetch /api/transport/vehicle-profile if user is legitimately in transport mode
+      const isTargetTransport = ['transport', 'vehicle', 'transporter'].includes(routeRole || activeRole);
+      if (isTargetTransport) {
         try {
           const transRes = await api.get('/api/transport/vehicle-profile');
           if (transRes.data) {
@@ -412,7 +422,6 @@ export default function EditProfileScreen({ navigation, route }: Props) {
           }
           if (experience) form.append('experience_years', experience);
           if (baseAddress) form.append('base_location_address', baseAddress);
-          form.append('sub_categories[]', vehicleType);
         } else if (isDriver) {
           form.append('category', 'driver');
           if (vehicleType) form.append('vehicle_type', vehicleType);
@@ -432,7 +441,8 @@ export default function EditProfileScreen({ navigation, route }: Props) {
           if (baseAddress) form.append('base_location_address', baseAddress);
         } else {
           // Labour / Karigar
-          if (selectedCategory) form.append('category', selectedCategory);
+          const catToSave = selectedCategory || (activeRole === 'karigar' ? 'karigar' : 'labour');
+          form.append('category', catToSave);
           if (experience) form.append('experience_years', experience);
           if (expectedWage) form.append('expected_daily_wage', expectedWage);
           if (baseAddress) form.append('base_location_address', baseAddress);

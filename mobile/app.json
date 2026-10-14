@@ -20,8 +20,9 @@
       "bundleIdentifier": "com.shramsarathi.app",
       "buildNumber": "1",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Location is needed to find nearby Saarthis.",
-        "NSLocationAlwaysUsageDescription": "Location is needed to find nearby Saarthis."
+        "NSLocationWhenInUseUsageDescription": "Location is needed to find nearby workers and service requests.",
+        "NSCameraUsageDescription": "Camera is needed to take profile pictures and KYC document photos.",
+        "NSPhotoLibraryUsageDescription": "Photo library access is needed to select profile pictures and KYC documents."
       }
     },
     "android": {
@@ -34,10 +35,15 @@
         "backgroundColor": "#FFFFFF"
       },
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -45,7 +51,15 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow Shram Sarathi to use your location to find nearby workers."
+          "locationWhenInUsePermission": "Allow Shram Sarathi to use your location to find nearby workers.",
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Shram Sarathi to access photos for profile and KYC verification.",
+          "cameraPermission": "Allow Shram Sarathi to use camera for profile and KYC verification."
         }
       ],
       "@react-native-community/datetimepicker",
@@ -56,6 +70,7 @@
       "eas": {
         "projectId": "83e7f8ed-f0e2-4a7e-8add-0aa1635c68bb"
       }
-    }
+    },
+    "owner": "shivam_yadav_12"
   }
 }

@@ -260,4 +260,71 @@ class PageController extends Controller
             'message'      => 'आपकी पूछताछ सफलतापूर्वक दर्ज कर ली गई है! हमारी सहायता टीम शीघ्र ही आपसे संपर्क करेगी। (Your inquiry has been received! Our support team will contact you shortly.)',
         ]);
     }
+
+    /**
+     * Account and Data Deletion Request Page (Google Play Store compliance).
+     */
+    public function deleteAccount()
+    {
+        return view('web.delete_account');
+    }
+
+    /**
+     * Handle Web Account Deletion Request submission.
+     */
+    public function submitDeleteAccountRequest(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone'  => 'required|string|regex:/^[6-9]\d{9}$/',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        $phone = $request->input('phone');
+        $user = \App\Models\User::where('phone', $phone)->first();
+
+        if (!$user) {
+            return back()->with('error', 'इस मोबाइल नंबर से कोई खाता पंजीकृत नहीं मिला। (No registered account found with this phone number.)')->withInput();
+        }
+
+        // Check active bookings
+        $hasActiveBookings = \App\Models\Booking::where(function ($q) use ($user) {
+            $q->where('customer_id', $user->id)
+              ->orWhere('provider_id', $user->id);
+        })->whereIn('status', ['requested', 'accepted', 'in_progress'])->exists();
+
+        if ($hasActiveBookings) {
+            return back()->with('error', 'आपकी सक्रिय बुकिंग चल रही है। कृपया पहले अपनी बुकिंग पूरी या रद्द करें। (You have active bookings. Please complete or cancel them before requesting account deletion.)')->withInput();
+        }
+
+        // Anonymize and delete user data
+        $userId = $user->id;
+        if ($user->providerProfile) {
+            $user->providerProfile->is_online = false;
+            $user->providerProfile->is_available = false;
+            $user->providerProfile->save();
+        }
+
+        $user->phone = 'del_' . $userId . '_' . time();
+        $user->name = 'Deleted User';
+        $user->gender = null;
+        $user->email = null;
+        $user->aadhaar_url = null;
+        $user->eshram_url = null;
+        $user->fcm_token = null;
+        $user->upi_id = null;
+        $user->bank_details = null;
+        $user->is_active = false;
+        $user->is_blacklisted = true;
+        $user->blacklist_reason = 'Account deleted via web portal: ' . ($request->input('reason') ?: 'User request');
+        $user->setPassword(bin2hex(random_bytes(16)));
+        $user->save();
+
+        Log::info("WEB ACCOUNT DELETION COMPLETED | user_id={$userId} original_phone={$phone}");
+
+        return back()->with('success', 'आपका खाता एवं संबंधित डेटा सफलतापूर्वक हटा दिया गया है। (Your account and associated data have been permanently deleted.)');
+    }
 }

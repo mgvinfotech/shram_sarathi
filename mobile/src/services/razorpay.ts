@@ -56,6 +56,14 @@ export function handleRazorpayModalCancel() {
   }
 }
 
+export function handleRazorpayModalError(err: any) {
+  if (currentReject) {
+    currentReject(err);
+    currentResolve = null;
+    currentReject = null;
+  }
+}
+
 /**
  * Opens Razorpay payment checkout directly inside the mobile app.
  * 
@@ -102,24 +110,34 @@ export async function openRazorpay(options: RazorpayOptions): Promise<RazorpayRe
     if (result.type === 'success' && result.url) {
       const url = result.url;
 
-      if (url.includes('payment-cancel')) {
+      if (url.startsWith('shramsarathi://payment-cancel')) {
         const cancelErr = new Error('Payment was cancelled');
         (cancelErr as any).code = 'PAYMENT_CANCELLED';
         throw cancelErr;
       }
 
-      // Parse payment parameters from redirect URL
-      const cleanUrl = url.replace('shramsarathi://', 'https://shramsarathi.app/');
-      const urlObj = new URL(cleanUrl);
-      const paymentId = urlObj.searchParams.get('payment_id') || `pay_${Date.now()}`;
-      const orderId = urlObj.searchParams.get('order_id') || options.order_id;
-      const signature = urlObj.searchParams.get('signature') || '';
+      if (url.startsWith('shramsarathi://payment-success')) {
+        // Parse payment parameters strictly from redirect URL
+        const cleanUrl = url.replace('shramsarathi://', 'https://shramsarathi.app/');
+        const urlObj = new URL(cleanUrl);
+        const paymentId = urlObj.searchParams.get('payment_id');
+        const orderId = urlObj.searchParams.get('order_id') || options.order_id;
+        const signature = urlObj.searchParams.get('signature');
 
-      return {
-        razorpay_payment_id: paymentId,
-        razorpay_order_id: orderId,
-        razorpay_signature: signature,
-      };
+        if (!paymentId || !signature || signature.trim() === '') {
+          const failErr = new Error('Payment signature verification failed: missing payment signature');
+          (failErr as any).code = 'PAYMENT_SIGNATURE_MISSING';
+          throw failErr;
+        }
+
+        return {
+          razorpay_payment_id: paymentId,
+          razorpay_order_id: orderId,
+          razorpay_signature: signature,
+        };
+      }
+
+      throw new Error('Payment window returned an unexpected URL');
     }
 
     if (result.type === 'cancel' || result.type === 'dismiss') {
@@ -131,7 +149,7 @@ export async function openRazorpay(options: RazorpayOptions): Promise<RazorpayRe
     // Fallback if unexpected result type
     throw new Error('Payment window was closed');
   } catch (err: any) {
-    if (err?.code === 'PAYMENT_CANCELLED') {
+    if (err?.code === 'PAYMENT_CANCELLED' || err?.code === 'PAYMENT_SIGNATURE_MISSING') {
       throw err;
     }
 
@@ -150,30 +168,33 @@ export async function openRazorpay(options: RazorpayOptions): Promise<RazorpayRe
         const url = event.url;
         if (!url) return;
 
-        if (url.includes('payment-success')) {
+        if (url.startsWith('shramsarathi://payment-success')) {
           cleanup();
           try {
             const cleanUrl = url.replace('shramsarathi://', 'https://shramsarathi.app/');
             const urlObj = new URL(cleanUrl);
-            const paymentId = urlObj.searchParams.get('payment_id') || `pay_${Date.now()}`;
+            const paymentId = urlObj.searchParams.get('payment_id');
             const orderId = urlObj.searchParams.get('order_id') || options.order_id;
-            const signature = urlObj.searchParams.get('signature') || '';
+            const signature = urlObj.searchParams.get('signature');
+
+            if (!paymentId || !signature || signature.trim() === '') {
+              const failErr = new Error('Payment signature verification failed: missing payment signature');
+              (failErr as any).code = 'PAYMENT_SIGNATURE_MISSING';
+              reject(failErr);
+              return;
+            }
 
             resolve({
               razorpay_payment_id: paymentId,
               razorpay_order_id: orderId,
               razorpay_signature: signature,
             });
-          } catch {
-            resolve({
-              razorpay_payment_id: `pay_${Date.now()}`,
-              razorpay_order_id: options.order_id,
-              razorpay_signature: '',
-            });
+          } catch (err) {
+            reject(err);
           }
-        } else if (url.includes('payment-cancel')) {
+        } else if (url.startsWith('shramsarathi://payment-cancel')) {
           cleanup();
-          reject({ code: 'PAYMENT_CANCELLED' });
+          reject({ code: 'PAYMENT_CANCELLED', message: 'Payment was cancelled' });
         }
       };
 

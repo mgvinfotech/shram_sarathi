@@ -302,7 +302,7 @@ export default function ConsentAndCompletionScreen({ navigation, route }: any) {
         'LABOUR':     'labour',
         'KARIGAR':    'karigar',
         'DRIVER':     'driver',
-        'TRANSPORT':  'driver',
+        'TRANSPORT':  'transport',
         'CONTRACTOR': 'contractor',
         'AGENT':      'agent',
         'CUSTOMER':   'customer',

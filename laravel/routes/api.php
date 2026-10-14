@@ -31,17 +31,23 @@ Route::get('/health', fn() => response()->json([
     'env' => config('app.env'),
 ]));
 
-// ─── Auth (no middleware) ─────────────────────────────────────────────────────
+// ─── Auth (rate limited for brute force & SMS spam protection) ─────────────────
 
-Route::post('/auth/signup', [AuthController::class, 'signup']);
-Route::post('/auth/verify-signup', [AuthController::class, 'verifySignup']);
-Route::post('/auth/complete-signup', [AuthController::class, 'completeSignup']);
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/login-with-otp', [AuthController::class, 'loginWithOtp']);
-Route::post('/auth/send-otp', [AuthController::class, 'loginWithOtp']);
-Route::post('/auth/verify-otp', [AuthController::class, 'verifyOtp']);
-Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/auth/signup', [AuthController::class, 'signup']);
+    Route::post('/auth/verify-signup', [AuthController::class, 'verifySignup']);
+    Route::post('/auth/complete-signup', [AuthController::class, 'completeSignup']);
+    Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+});
+
+// Strict rate-limiting on SMS/OTP dispatching endpoints (max 6 requests per minute per IP)
+Route::middleware('throttle:6,1')->group(function () {
+    Route::post('/auth/login-with-otp', [AuthController::class, 'loginWithOtp']);
+    Route::post('/auth/send-otp', [AuthController::class, 'loginWithOtp']);
+    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+});
 
 // ─── Public ───────────────────────────────────────────────────────────────────
 
@@ -75,6 +81,7 @@ Route::middleware('jwt.auth')->group(function () {
     Route::post('/auth/update-role', [AuthController::class, 'updateRole']);
     Route::post('/auth/add-role', [AuthController::class, 'addRole']);
     Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
+    Route::delete('/auth/delete-account', [AuthController::class, 'deleteAccount']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
     // Onboarding
@@ -206,6 +213,7 @@ Route::middleware('jwt.auth')->group(function () {
     Route::post('/negotiation/upload-voice', [LabourController::class, 'uploadVoice']);
 
     // Payment / Wallet
+    Route::get('/payment/fee', [PaymentController::class, 'getFee']);
     Route::post('/payment/create-order', [PaymentController::class, 'createOrder']);
     Route::post('/payment/verify', [PaymentController::class, 'verify']);
     Route::post('/payment/refund', [PaymentController::class, 'refund']);

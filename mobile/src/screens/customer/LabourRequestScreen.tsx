@@ -301,8 +301,6 @@ export default function LabourRequestScreen({ route, navigation }: Props) {
         labour_count: labourCount,
         live_chat_enabled: liveChatEnabled,
       });
-      console.log('[LabourRequest] Response:', JSON.stringify(res.data));
-      console.log('[LabourRequest] Navigating to LabourRequestStatus with job_id:', res.data.job_id);
       rootNavigation.navigate('LabourRequestStatus' as never, { job_id: res.data.job_id } as never);
     } catch (err: any) {
       if (err.response?.data?.job_id) {

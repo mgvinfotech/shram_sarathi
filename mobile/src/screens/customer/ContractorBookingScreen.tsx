@@ -9,11 +9,11 @@ import { useLanguage } from '../../i18n/LanguageContext';
 
 interface Props {
   navigation: any;
-  route: { params: { provider: any } };
+  route?: { params?: { provider?: any } };
 }
 
 export default function ContractorBookingScreen({ navigation, route }: Props) {
-  const { provider } = route.params;
+  const provider = route?.params?.provider;
   const { t, lang } = useLanguage();
 
   const [quantity, setQuantity] = useState('');
@@ -22,6 +22,24 @@ export default function ContractorBookingScreen({ navigation, route }: Props) {
   const [pin, setPin] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+
+  if (!provider) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: '#333', textAlign: 'center' }}>
+            {lang === 'hi' ? 'ठेकेदार की जानकारी उपलब्ध नहीं है' : 'Contractor details not found'}
+          </Text>
+          <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>
+            {lang === 'hi' ? 'कृपया ठेकेदार सूची से पुनः चयन करें।' : 'Please select a contractor from the list.'}
+          </Text>
+          <Button mode="contained" buttonColor="#FF6B00" onPress={() => navigation.goBack()}>
+            {lang === 'hi' ? 'वापस जाएं' : 'Go Back'}
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const handleCalculate = async () => {
     const qty = parseInt(quantity);

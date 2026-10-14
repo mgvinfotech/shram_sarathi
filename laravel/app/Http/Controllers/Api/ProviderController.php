@@ -212,11 +212,23 @@ class ProviderController extends Controller
             $profile->load(['user', 'workingLocations']);
         }
 
+        $subCategories = $profile ? ($profile->sub_categories ?? []) : [];
+        if (!is_array($subCategories)) {
+            $subCategories = [];
+        }
+        $currentCat = strtolower($profile?->category ?? $user->role ?? '');
+        if (in_array($currentCat, ['labour', 'majdoor', 'karigar']) && !empty($profile?->vehicle_type)) {
+            $vType = trim(strtolower($profile->vehicle_type));
+            $subCategories = array_values(array_filter($subCategories, function ($sc) use ($vType) {
+                return trim(strtolower((string)$sc)) !== $vType;
+            }));
+        }
+
         return response()->json([
             'id'                     => $profile ? $profile->id : null,
             'user_id'                => $userId,
             'category'               => $profile ? $profile->category : null,
-            'sub_categories'         => $profile ? ($profile->sub_categories ?? []) : [],
+            'sub_categories'         => $subCategories,
             'skills_description'     => $profile ? $profile->skills_description : null,
             'experience_years'       => $profile ? $profile->experience_years : null,
             'expected_daily_wage'    => $profile ? $profile->expected_daily_wage : null,

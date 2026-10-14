@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal,
   ActivityIndicator, Alert, Linking,
@@ -12,48 +12,79 @@ import { openRazorpay } from '../../services/razorpay';
 
 interface Provider {
   user_id: number;
-  name: string;
-  category: string;
-  distance_km: number;
-  rating: number;
+  name?: string;
+  category?: string;
+  distance_km?: number | string;
+  rating?: number | string;
+  phone?: string;
 }
 
 interface Props {
   visible: boolean;
   provider: Provider;
+  amount?: number;
   onClose: () => void;
   onSuccess: (bookingId: number) => void;
 }
 
-export default function PaymentModal({ visible, provider, onClose, onSuccess }: Props) {
+export default function PaymentModal({ visible, provider, amount, onClose, onSuccess }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [providerPhone, setProviderPhone] = useState<string | null>(null);
   const [bookingDone, setBookingDone] = useState(false);
+  const [completedBookingId, setCompletedBookingId] = useState<number | null>(null);
+  const [feeAmount, setFeeAmount] = useState<number>(amount ?? 10);
   const { t } = useLanguage();
   const { name, phone } = useSelector((s: RootState) => s.auth);
 
+  useEffect(() => {
+    if (visible) {
+      if (amount !== undefined) {
+        setFeeAmount(amount);
+      } else {
+        api.get('/api/payment/fee')
+          .then((res) => {
+            if (res.data?.fee !== undefined) {
+              setFeeAmount(Number(res.data.fee));
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }, [visible, amount]);
+
   const handleClose = () => {
-    // Reset state when closing
+    if (bookingDone && completedBookingId) {
+      onSuccess(completedBookingId);
+    }
     setProviderPhone(null);
     setBookingDone(false);
+    setCompletedBookingId(null);
     onClose();
   };
 
   const handlePayment = async () => {
+    if (!provider?.user_id) {
+      Alert.alert('Error', 'सारथी की जानकारी अधूरी है।');
+      return;
+    }
+
     setIsLoading(true);
     try {
       // Create order / booking on backend
       const res = await api.post('/api/payment/create-order', {
         provider_id: provider.user_id,
-        category: provider.category,
+        category: provider.category || '',
       });
 
       const data = res.data;
+      if (data?.amount) {
+        setFeeAmount(Number(data.amount) / 100);
+      }
 
       // ── Real Razorpay payment flow ─────────────────────────────────────────
       const paymentData = await openRazorpay({
-        description: `${t('appName')} - ${provider.name}`,
-        currency: data.currency,
+        description: `${t('appName')} - ${provider.name || 'Provider'}`,
+        currency: data.currency || 'INR',
         key: data.key_id,
         amount: String(data.amount),
         order_id: data.order_id,
@@ -69,12 +100,21 @@ export default function PaymentModal({ visible, provider, onClose, onSuccess }: 
         payment_db_id: data.payment_db_id,
       });
 
-      onSuccess(verifyRes.data.booking_id);
+      const returnedBookingId = verifyRes.data.booking_id;
+      const returnedPhone = verifyRes.data.provider_phone || provider?.phone;
+
+      if (returnedPhone) {
+        setCompletedBookingId(returnedBookingId);
+        setProviderPhone(returnedPhone);
+        setBookingDone(true);
+      } else {
+        onSuccess(returnedBookingId);
+      }
     } catch (error: any) {
       if (error?.code === 'PAYMENT_CANCELLED') {
         // User cancelled — do nothing
       } else {
-        Alert.alert('Error', t('paymentFailed'));
+        Alert.alert('Error', error?.response?.data?.detail || error?.message || t('paymentFailed'));
       }
     } finally {
       setIsLoading(false);
@@ -87,23 +127,36 @@ export default function PaymentModal({ visible, provider, onClose, onSuccess }: 
     Linking.openURL(`tel:${providerPhone}`);
   };
 
+  if (!visible || !provider) return null;
+
+  const displayName = provider?.name?.trim() || 'सारथी';
+  const avatarChar = displayName.charAt(0).toUpperCase() || 'S';
+  const displayRating = provider?.rating != null && !isNaN(Number(provider.rating))
+    ? Number(provider.rating).toFixed(1)
+    : '5.0';
+  const displayDistance = provider?.distance_km != null && !isNaN(Number(provider.distance_km))
+    ? `${Number(provider.distance_km).toFixed(2)} ${t('kmAway')}`
+    : '';
+
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
           {/* Provider Info */}
           <View style={styles.providerRow}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{provider.name[0]}</Text>
+              <Text style={styles.avatarText}>{avatarChar}</Text>
             </View>
             <View style={styles.providerInfo}>
-              <Text style={styles.providerName}>{provider.name}</Text>
-              <Text style={styles.providerCategory}>{provider.category}</Text>
-              <Text style={styles.distance}>
-                📍 {Number(provider.distance_km).toFixed(2)} {t('kmAway')}
-              </Text>
+              <Text style={styles.providerName}>{displayName}</Text>
+              {provider.category ? (
+                <Text style={styles.providerCategory}>{provider.category}</Text>
+              ) : null}
+              {displayDistance ? (
+                <Text style={styles.distance}>📍 {displayDistance}</Text>
+              ) : null}
             </View>
-            <Text style={styles.ratingText}>⭐ {provider.rating.toFixed(1)}</Text>
+            <Text style={styles.ratingText}>⭐ {displayRating}</Text>
           </View>
 
           <View style={styles.divider} />
@@ -139,7 +192,7 @@ export default function PaymentModal({ visible, provider, onClose, onSuccess }: 
             <>
               <View style={styles.feeContainer}>
                 <Text style={styles.feeLabel}>{t('contactFee')}</Text>
-                <Text style={styles.feeAmount}>₹10</Text>
+                <Text style={styles.feeAmount}>₹{feeAmount}</Text>
               </View>
 
               <Text style={styles.feeNote}>✅ {t('feeNote1')}</Text>

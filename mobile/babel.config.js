@@ -1,8 +1,11 @@
 module.exports = function (api) {
   api.cache(true);
+  const plugins = [];
+  if (process.env.NODE_ENV === 'production') {
+    plugins.push('transform-remove-console');
+  }
   return {
     presets: ['babel-preset-expo'],
-    // Note: react-native-reanimated/plugin is only needed for production builds
-    // Remove it for Expo Go compatibility
+    plugins,
   };
 };

@@ -506,9 +506,6 @@ export default function TransportBookingScreen({ navigation, route }: Props) {
   const handleBroadcastRequest = async (overrideFare?: number) => {
     const finalOfferedFare = overrideFare !== undefined ? overrideFare : offeredFare;
     setBroadcastLoading(true);
-    setSearchSecondsLeft(60);
-    setBookingStatus('searching');
-    setStep('live_contract');
 
     try {
       const res = await api.post('/api/transport/book', {
@@ -530,14 +527,21 @@ export default function TransportBookingScreen({ navigation, route }: Props) {
         offered_fare: finalOfferedFare,
       });
 
-      const bId = res.data.booking_id;
+      const bId = res.data?.booking_id;
+      if (!bId) {
+        throw new Error(res.data?.message || 'Booking ID not returned from server');
+      }
       setBookingId(bId);
+      setSearchSecondsLeft(60);
       setBookingStatus('searching');
+      setStep('live_contract');
     } catch (e: any) {
-      // Mock booking ID for demo
-      const mockId = Math.floor(100000 + Math.random() * 900000);
-      setBookingId(mockId);
-      setBookingStatus('searching');
+      const errorMsg =
+        e?.response?.data?.message ||
+        e?.response?.data?.detail ||
+        e?.message ||
+        (lang === 'hi' ? 'बुकिंग भेजने में त्रुटि हुई। कृपया पुनः प्रयास करें।' : 'Failed to broadcast booking. Please try again.');
+      Alert.alert(lang === 'hi' ? 'बुकिंग त्रुटि' : 'Booking Error', errorMsg);
     } finally {
       setBroadcastLoading(false);
     }

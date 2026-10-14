@@ -334,10 +334,7 @@ export default function KarigarBookingScreen({ route, navigation }: Props) {
         media_url: mediaUri || undefined,
         live_chat_enabled: true,
       });
-      console.log('[KarigarRequest] Response:', JSON.stringify(res.data));
-      console.log('[KarigarRequest] Navigating to KarigarRequestStatus with job_id:', res.data.job_id);
       rootNavigation.navigate('KarigarRequestStatus' as never, { job_id: res.data.job_id } as never);
-      console.log('[KarigarRequest] navigation.navigate called successfully');
     } catch (err: any) {
       if (err.response?.data?.job_id) {
         const existingJobId = err.response.data.job_id;
